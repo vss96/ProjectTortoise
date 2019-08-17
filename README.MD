@@ -1,3 +1,3 @@
-#Project Tortoise
+# Project Tortoise
 
-Queue system implemented in Rust.
+Queue system implemented in Rust by a bunch of Pepegs.
