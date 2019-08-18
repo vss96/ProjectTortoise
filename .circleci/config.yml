@@ -1,5 +1,3 @@
-version: 2
-
 jobs:
   build:
     docker:
@@ -33,4 +31,9 @@ jobs:
           key: project-cache
           paths:
             - "~/.cargo"
-            - "./target"
+            - "./target"          key: project-cache
+      - run:
+          name: Check formatting
+          command: |
+            rustfmt --version
+            cargo fmt -- --write-mode=diff
