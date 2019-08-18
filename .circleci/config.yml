@@ -10,7 +10,8 @@ jobs:
           key: project-cache
       - run:
           name: Change directory
-          command : cd project_tortoise    
+          command : |
+          cd project_tortoise    
       - run:
           name: Check formatting
           command: |
