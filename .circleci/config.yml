@@ -11,7 +11,7 @@ jobs:
       - run:
           name: Change directory
           command : |
-          cd project_tortoise    
+            cd project_tortoise    
       - run:
           name: Check formatting
           command: |
