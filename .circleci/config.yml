@@ -6,8 +6,8 @@ jobs:
     docker:
       - image: circleci/rust:latest
     steps:
-      - checkout
-	  path: ~/project
+      - checkout:
+	        path: ~/project
       - restore_cache:
           key: project-cache    
       - run:
