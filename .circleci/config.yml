@@ -2,16 +2,14 @@ version: 2
 
 jobs:
   build:
+    working_directory: ~/project/project_tortoise
     docker:
       - image: circleci/rust:latest
     steps:
       - checkout
+	  path: ~/project
       - restore_cache:
-          key: project-cache
-      - run:
-          name: Change directory
-          command : |
-            cd project_tortoise    
+          key: project-cache    
       - run:
           name: Check formatting
           command: |
