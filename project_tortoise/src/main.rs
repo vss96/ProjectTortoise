@@ -1,4 +1,4 @@
-use crate::circular_queue::QueueOperations;
+use crate::circular_queue::{QueueOperations, CircularQueue};
 
 mod circular_queue;
 
