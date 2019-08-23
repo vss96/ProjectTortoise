@@ -1,10 +1,10 @@
 extern crate queues;
 
 use queues::*;
-use std::fs::File;
-use std::io::{Write, BufWriter, BufReader, BufRead};
-use std::string::String;
 use std::borrow::BorrowMut;
+use std::fs::File;
+use std::io::{BufRead, BufReader, BufWriter, Write};
+use std::string::String;
 
 pub struct CircularQueue {
     c_queue: Queue<String>,
@@ -19,7 +19,7 @@ pub trait QueueOperations {
 }
 
 impl Default for CircularQueue {
-     fn default() -> CircularQueue {
+    fn default() -> CircularQueue {
         CircularQueue {
             c_queue: queue![],
             c_size: 100000,
@@ -39,8 +39,7 @@ impl QueueOperations for CircularQueue {
             self.save_in_file(json);
             self.c_queue.remove();
             self.c_queue.add(json_message);
-        }
-        else {
+        } else {
             self.c_queue.add(json_message);
         }
     }
@@ -51,8 +50,7 @@ impl QueueOperations for CircularQueue {
         for line in file.lines() {
             if self.c_queue.size() < self.c_size {
                 self.c_queue.add(line.unwrap());
-            }
-            else {
+            } else {
                 break;
             }
         }
@@ -62,7 +60,7 @@ impl QueueOperations for CircularQueue {
 impl CircularQueue {
     fn save_in_file(self: &mut Self, json_message: String) {
         let mut file = BufWriter::new(self.file_pointer.borrow_mut());
-        file.write_all(json_message.as_bytes()).expect("Unable to write into the log file");
+        file.write_all(json_message.as_bytes())
+            .expect("Unable to write into the log file");
     }
 }
-
