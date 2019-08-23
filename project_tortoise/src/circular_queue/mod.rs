@@ -5,7 +5,6 @@ use std::fs::File;
 use std::io::{Write, BufWriter, BufReader, BufRead};
 use std::string::String;
 use std::borrow::BorrowMut;
-use std::f32::consts::E;
 
 pub struct CircularQueue {
     c_queue: Queue<String>,
@@ -40,7 +39,8 @@ impl QueueOperations for CircularQueue {
             self.save_in_file(json);
             self.c_queue.remove();
             self.c_queue.add(json_message);
-        } else {
+        }
+        else {
             self.c_queue.add(json_message);
         }
     }
@@ -51,7 +51,8 @@ impl QueueOperations for CircularQueue {
         for line in file.lines() {
             if self.c_queue.size() < self.c_size {
                 self.c_queue.add(line.unwrap());
-            } else {
+            }
+            else {
                 break;
             }
         }
