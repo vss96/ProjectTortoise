@@ -64,3 +64,14 @@ impl CircularQueue {
             .expect("Unable to write into the log file");
     }
 }
+
+#[test]
+fn circular_queue_test() {
+    let mut _cqueue: CircularQueue = Default::default();
+    assert_eq!(_cqueue.c_size, 100000);
+    _cqueue.set_size(100);
+    assert_eq!(_cqueue.c_size, 100);
+
+    _cqueue.push(String::from("Hello"));
+    assert_eq!(_cqueue.c_queue.peek().unwrap(), "Hello");
+}
