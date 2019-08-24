@@ -82,5 +82,3 @@ fn circular_queue_test() {
     _cqueue.push(String::from("Hello"));
     assert_eq!(_cqueue.c_queue.peek().unwrap(), "Hello");
 }
-
-
