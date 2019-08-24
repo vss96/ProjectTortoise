@@ -9,13 +9,14 @@ use std::string::String;
 pub struct CircularQueue {
     c_queue: Queue<String>,
     c_size: usize,
-    file_pointer: File,
+    write_pointer: File,
+    read_pointer: BufReader<File>,
 }
 
 pub trait QueueOperations {
-    fn set_size(self: &mut Self, c_size: usize);
-    fn push(self: &mut Self, json_message: String);
-    fn pull(self: &mut Self);
+    fn set_size(&mut self, c_size: usize);
+    fn push_message(&mut self, json_message: String);
+    fn get_message(&mut self) -> String;
 }
 
 impl Default for CircularQueue {
@@ -23,17 +24,18 @@ impl Default for CircularQueue {
         CircularQueue {
             c_queue: queue![],
             c_size: 100000,
-            file_pointer: File::create("tortoise.log").unwrap(),
+            write_pointer: File::create("tortoise.log").unwrap(),
+            read_pointer: BufReader::new(File::open("tortoise.log").unwrap()),
         }
     }
 }
 
 impl QueueOperations for CircularQueue {
-    fn set_size(self: &mut Self, c_size: usize) {
+    fn set_size(&mut self, c_size: usize) {
         self.c_size = c_size;
     }
 
-    fn push(self: &mut Self, json_message: String) {
+    fn push_message(&mut self, json_message: String) {
         if self.c_queue.size() == self.c_size {
             let json = self.c_queue.peek().unwrap();
             self.save_in_file(json);
@@ -44,24 +46,29 @@ impl QueueOperations for CircularQueue {
         }
     }
 
-    fn pull(self: &mut Self) {
-        //Does not remove lines, will have to look into it.
-        let file = BufReader::new(self.file_pointer.borrow_mut());
-        for line in file.lines() {
-            if self.c_queue.size() < self.c_size {
-                self.c_queue.add(line.unwrap());
-            } else {
-                break;
-            }
-        }
+    fn get_message(&mut self) -> String {
+        let mut message = self.c_queue.peek().unwrap_or_default();
+        self.c_queue.remove();
+        self.pull_message();
+        return String::from(message.trim_end_matches("\n"));
     }
 }
 
 impl CircularQueue {
-    fn save_in_file(self: &mut Self, json_message: String) {
-        let mut file = BufWriter::new(self.file_pointer.borrow_mut());
-        file.write_all(json_message.as_bytes())
+    fn save_in_file(&mut self, json_message: String) {
+        let mut file = BufWriter::new(self.write_pointer.borrow_mut());
+        file.write_all((json_message + "\n").as_bytes())
             .expect("Unable to write into the log file");
+    }
+
+    fn pull_message(&mut self) {
+        //Does not remove lines, will have to look into it.
+        let reader = self.read_pointer.borrow_mut();
+        let mut line_string: String = String::from("");
+        reader.read_line(line_string.borrow_mut()).unwrap();
+        if !line_string.is_empty() {
+            self.c_queue.add(line_string);
+        }
     }
 }
 
@@ -75,3 +82,5 @@ fn circular_queue_test() {
     _cqueue.push(String::from("Hello"));
     assert_eq!(_cqueue.c_queue.peek().unwrap(), "Hello");
 }
+
+
