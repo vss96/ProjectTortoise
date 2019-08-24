@@ -79,6 +79,6 @@ fn circular_queue_test() {
     _cqueue.set_size(100);
     assert_eq!(_cqueue.c_size, 100);
 
-    _cqueue.push(String::from("Hello"));
+    _cqueue.push_message(String::from("Hello"));
     assert_eq!(_cqueue.c_queue.peek().unwrap(), "Hello");
 }
