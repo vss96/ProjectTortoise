@@ -2,10 +2,10 @@ extern crate queues;
 
 use crossbeam_queue::ArrayQueue;
 use std::borrow::BorrowMut;
+use std::cmp::min;
 use std::fs::File;
 use std::io::{BufRead, BufReader, BufWriter, Write};
 use std::string::String;
-use std::cmp::min;
 
 pub struct CircularQueue {
     c_queue: ArrayQueue<String>,
@@ -33,7 +33,7 @@ impl Default for CircularQueue {
 
 impl QueueOperations for CircularQueue {
     fn set_size(&mut self, c_size: usize) {
-        self.c_size = min(c_size,100000);
+        self.c_size = min(c_size, 100000);
     }
 
     fn push(&mut self, json_message: String) {
