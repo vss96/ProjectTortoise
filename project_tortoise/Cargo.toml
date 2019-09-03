@@ -9,3 +9,5 @@ edition = "2018"
 [dependencies]
 queues = "1.1.0"
 bufstream = "0.1.4"
+time = "*"
+crossbeam-queue = "0.1.2"
