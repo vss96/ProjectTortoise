@@ -76,8 +76,8 @@ fn default_test() {
     _cqueue.set_size(100);
     assert_eq!(_cqueue.c_size, 100);
 
-    _cqueue.push_message(String::from("Hello"));
-    assert_eq!(_cqueue.c_queue.pop().unwrap(), "Hello");
+    _cqueue.push(String::from("Hello"));
+    assert_eq!(_cqueue.pull(), "Hello");
 }
 
 #[test]
