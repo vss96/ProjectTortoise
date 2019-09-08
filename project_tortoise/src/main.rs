@@ -24,6 +24,9 @@ fn main() {
         string.push_str(i.to_string().as_str());
         _cqueue.push(string.into_bytes());
     }
-    println!("Finished inserting all elements: {}", _cqueue.get_size().to_string());
+    println!(
+        "Finished inserting all elements: {}",
+        _cqueue.get_size().to_string()
+    );
     let msg = String::from_utf8(_cqueue.pull());
 }
