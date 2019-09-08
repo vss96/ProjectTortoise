@@ -1,12 +1,13 @@
 extern crate queues;
 
-use crossbeam_queue::ArrayQueue;
-use std::borrow::{BorrowMut, Borrow};
+use std::borrow::{Borrow, BorrowMut};
 use std::cmp::min;
 use std::fs::File;
 use std::io::{BufRead, BufReader, BufWriter, Write};
 use std::string::String;
-use std::sync::{Condvar, Mutex, Arc};
+use std::sync::{Arc, Condvar, Mutex};
+
+use crossbeam_queue::ArrayQueue;
 
 pub struct CircularQueue {
     c_queue: ArrayQueue<String>,
@@ -19,23 +20,21 @@ pub struct Queue {
     name: String,
     size: usize,
     _canPush: Arc<(Mutex<bool>, Condvar)>,
-    _queue: ArrayQueue<Vec<u8>>
+    _queue: ArrayQueue<Vec<u8>>,
 }
 
 impl Default for Queue {
-
     fn default() -> Self {
         Queue {
             name: String::from("Default"),
             size: 100000,
             _canPush: Arc::new((Mutex::new(true), Condvar::new())),
-            _queue: ArrayQueue::new(100000)
+            _queue: ArrayQueue::new(100000),
         }
     }
 }
 
 impl QueueOperations<Vec<u8>> for Queue {
-
     fn push(&self, json_message: Vec<u8>) {
         let isFull = self._queue.is_full();
         let lock: &std::sync::Mutex<bool> = &self._canPush.0;
@@ -62,7 +61,6 @@ impl QueueOperations<Vec<u8>> for Queue {
 }
 
 impl Queue {
-
     pub fn get_size(&self) -> usize {
         self._queue.len()
     }

@@ -1,10 +1,11 @@
-mod circular_queue;
-
-use crate::circular_queue::{CircularQueue, QueueOperations, Queue};
 use std::sync::Arc;
 use std::thread;
 use std::thread::sleep;
 use std::time::Duration;
+
+use crate::circular_queue::{CircularQueue, Queue, QueueOperations};
+
+mod circular_queue;
 
 fn main() {
     println!("Hello, world!");
