@@ -29,8 +29,7 @@ fn main() {
         match stream {
             Ok(mut wx) => {
                 let server_queue = _cqueue.clone();
-                while server_queue.get_size() == 0{
-
+                while server_queue.get_size() == 0 {
                     wx.write_all(server_queue.pull().borrow());
                     wx.write_all("\n".as_bytes());
                 }
