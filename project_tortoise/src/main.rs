@@ -3,7 +3,7 @@ use std::{fs, thread};
 
 use crate::circular_queue::{Queue, QueueOperations};
 use std::borrow::Borrow;
-use std::io::{BufWriter, Write};
+use std::io::Write;
 use std::net::TcpListener;
 
 mod circular_queue;
@@ -29,10 +29,8 @@ fn main() {
         match stream {
             Ok(mut wx) => {
                 let server_queue = _cqueue.clone();
-                loop {
-                    if _cqueue.get_size() <= 0 {
-                        break;
-                    }
+                while server_queue.get_size() == 0{
+
                     wx.write_all(server_queue.pull().borrow());
                     wx.write_all("\n".as_bytes());
                 }
