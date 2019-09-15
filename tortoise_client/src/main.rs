@@ -15,7 +15,7 @@ fn main() {
     let incoming_stream = BufReader::new(connection);
     for line in incoming_stream.lines() {
         let mut file =
-            File::create("../../Documents/Files/".to_string() + msg_counter.to_string().as_ref() + ".json")
+            File::create("Files/".to_string() + msg_counter.to_string().as_ref() + ".json")
                 .unwrap();
         msg_counter = msg_counter + 1;
         //       println!(" Message: {}", line.unwrap());
