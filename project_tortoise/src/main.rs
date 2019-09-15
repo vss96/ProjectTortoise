@@ -22,14 +22,15 @@ fn main() {
         }
     });
 
-    let addr = "0.0.0.0:6006";
+    let addr = "127.0.0.1:6006";
     let listener = TcpListener::bind(&addr).unwrap();
 
     for stream in listener.incoming() {
         match stream {
             Ok(mut wx) => {
+                println!("Server is geting pinged");
                 let server_queue = _cqueue.clone();
-                while server_queue.get_size() == 0 {
+                while server_queue.get_size() > 0 {
                     wx.write_all(server_queue.pull().borrow());
                     wx.write_all("\n".as_bytes());
                 }
