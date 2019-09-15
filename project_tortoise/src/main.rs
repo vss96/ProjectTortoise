@@ -4,9 +4,16 @@ use std::{fs, thread};
 use crate::circular_queue::{Queue, QueueOperations};
 use std::borrow::Borrow;
 use std::io::Write;
-use std::net::TcpListener;
+use std::net::{TcpListener, TcpStream};
 
 mod circular_queue;
+
+fn write_to_connection(mut stream: TcpStream, queue: Arc<Queue>) {
+    while queue.get_size() > 0 {
+        stream.write_all(queue.pull().borrow());
+        stream.write_all("\n".as_bytes());
+    }
+}
 
 fn main() {
     let _cqueue: Arc<Queue> = Arc::new(Queue::default());
@@ -22,18 +29,17 @@ fn main() {
         }
     });
 
-    let addr = "127.0.0.1:6006";
+    let addr = "127.0.0.1:6007";
     let listener = TcpListener::bind(&addr).unwrap();
 
-    for stream in listener.incoming() {
-        match stream {
-            Ok(mut wx) => {
+    for connection in listener.incoming() {
+        match connection {
+            Ok(mut stream) => {
                 println!("Server is geting pinged");
                 let server_queue = _cqueue.clone();
-                while server_queue.get_size() > 0 {
-                    wx.write_all(server_queue.pull().borrow());
-                    wx.write_all("\n".as_bytes());
-                }
+                thread::spawn(move || {
+                    write_to_connection(stream, server_queue);
+                });
             }
             Err(E) => {
                 println!("Socket failed");
