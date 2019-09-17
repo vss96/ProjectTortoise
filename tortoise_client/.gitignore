@@ -1,0 +1,6 @@
+/target
+/Files
+**/*.rs.bk
+.idea
+*.log
+Cargo.lock
