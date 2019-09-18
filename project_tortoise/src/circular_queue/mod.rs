@@ -20,6 +20,7 @@ pub struct Queue {
     name: String,
     size: usize,
     _canPush: Arc<(Mutex<bool>, Condvar)>,
+    _canPull: Arc<(Mutex<bool>, Condvar)>,
     _queue: ArrayQueue<Vec<u8>>,
 }
 
@@ -29,6 +30,7 @@ impl Default for Queue {
             name: String::from("Default"),
             size: 100000,
             _canPush: Arc::new((Mutex::new(true), Condvar::new())),
+            _canPull: Arc::new((Mutex::new(false), Condvar::new())),
             _queue: ArrayQueue::new(100000),
         }
     }
@@ -37,26 +39,42 @@ impl Default for Queue {
 impl QueueOperations<Vec<u8>> for Queue {
     fn push(&self, json_message: Vec<u8>) {
         let isFull = self._queue.is_full();
-        let lock: &std::sync::Mutex<bool> = &self._canPush.0;
-        let condVar = &self._canPush.1;
-        let mut mutex = lock.lock().unwrap();
-        while !*mutex {
-            mutex = condVar.wait(mutex).unwrap();
+        let lock_push: &std::sync::Mutex<bool> = &self._canPush.0;
+        let condVar_push = &self._canPush.1;
+        let mut mutex_push = lock_push.lock().unwrap();
+        while !*mutex_push {
+            mutex_push = condVar_push.wait(mutex_push).unwrap();
         }
+
         if self.size - self._queue.len() == 1 {
-            *mutex = false;
-            condVar.notify_one();
+            *mutex_push = false;
+            condVar_push.notify_all();
         }
         self._queue.push(json_message);
+        let (lock_pull, condVar_pull) = &*self._canPull;
+        let mut mutex_pull = lock_pull.lock().unwrap();
+        *mutex_pull = true;
+        condVar_pull.notify_all();
+
     }
 
     fn pull(&self) -> Vec<u8> {
-        let message = self._queue.pop().unwrap_or_default();
-        let (lock, condVar) = &*self._canPush;
-        let mut mutex = lock.lock().unwrap();
-        *mutex = true;
-        condVar.notify_one();
+        let (lock_pull, condVar_pull) = &*self._canPull;
+        let mut mutex_pull = lock_pull.lock().unwrap();
+        while !*mutex_pull {
+            mutex_pull = condVar_pull.wait(mutex_pull).unwrap();
+        }
+        if self._queue.len() == 1 {
+            *mutex_pull = false;
+            condVar_pull.notify_all();
+        }
+        let message= self._queue.pop().unwrap();
+        let (lock_push, condVar_push) = &*self._canPush;
+        let mut mutex_push = lock_push.lock().unwrap();
+        *mutex_push = true;
+        condVar_push.notify_all();
         message
+
     }
 }
 
