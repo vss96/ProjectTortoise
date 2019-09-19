@@ -19,7 +19,7 @@ fn main() {
     let _cqueue: Arc<Queue> = Arc::new(Queue::default());
     let queue_clone = _cqueue.clone();
 
-    let paths = fs::read_dir("/Users/vikass/Documents/sampleData").unwrap();
+    let paths = fs::read_dir("/data/finalDataSet4Sept2019/").unwrap();
     let mut a = 1;
     thread::spawn(move || {
         for path in paths {
@@ -29,7 +29,7 @@ fn main() {
         }
     });
 
-    let addr = "127.0.0.1:6007";
+    let addr = "0.0.0.0:6007";
     let listener = TcpListener::bind(&addr).unwrap();
     println!("Server started");
     for connection in listener.incoming() {

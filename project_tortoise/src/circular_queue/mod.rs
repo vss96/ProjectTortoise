@@ -28,16 +28,17 @@ impl Default for Queue {
     fn default() -> Self {
         Queue {
             name: String::from("Default"),
-            size: 100000,
+            size: 500000,
             _canPush: Arc::new((Mutex::new(true), Condvar::new())),
             _canPull: Arc::new((Mutex::new(false), Condvar::new())),
-            _queue: ArrayQueue::new(100000),
+            _queue: ArrayQueue::new(500000),
         }
     }
 }
 
 impl QueueOperations<Vec<u8>> for Queue {
     fn push(&self, json_message: Vec<u8>) {
+        {
         let isFull = self._queue.is_full();
         let lock_push: &std::sync::Mutex<bool> = &self._canPush.0;
         let condVar_push = &self._canPush.1;
@@ -51,11 +52,11 @@ impl QueueOperations<Vec<u8>> for Queue {
             condVar_push.notify_all();
         }
         self._queue.push(json_message);
+        }
         let (lock_pull, condVar_pull) = &*self._canPull;
         let mut mutex_pull = lock_pull.lock().unwrap();
         *mutex_pull = true;
         condVar_pull.notify_all();
-
     }
 
     fn pull(&self) -> Vec<u8> {
@@ -68,11 +69,12 @@ impl QueueOperations<Vec<u8>> for Queue {
             *mutex_pull = false;
             condVar_pull.notify_all();
         }
-        let message= self._queue.pop().unwrap();
+        drop(mutex_pull);
+        let message = self._queue.pop().unwrap();
         let (lock_push, condVar_push) = &*self._canPush;
         let mut mutex_push = lock_push.lock().unwrap();
-        *mutex_push = true;
-        condVar_push.notify_all();
+            *mutex_push = true;
+            condVar_push.notify_all();
         message
 
     }
