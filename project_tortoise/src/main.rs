@@ -23,6 +23,26 @@ fn write_to_connection(mut stream: TcpStream, queue: Arc<Queue>) {
     }
 }
 
+fn spawn_push_thread(port: String, queue: Arc<Queue>) {
+    let addr = "0.0.0.0:".to_owned() + port.as_str();
+    let listener = TcpListener::bind(&addr).unwrap();
+    println!("Server started at {}", &addr);
+    for connection in listener.incoming() {
+        match connection {
+            Ok(mut stream) => {
+                println!("Server is geting pinged");
+                let server_queue = queue.clone();
+                thread::spawn(move || {
+                    write_to_connection(stream, server_queue);
+                });
+            }
+            Err(E) => {
+                println!("Socket failed");
+            }
+        }
+    }
+}
+
 fn main() {
     let _cqueue: Arc<Queue> = Arc::new(Queue::default());
     let queue_clone = _cqueue.clone();
@@ -36,22 +56,9 @@ fn main() {
             queue_clone.push(json);
         }
     });
-
-    let addr = "0.0.0.0:6007";
-    let listener = TcpListener::bind(&addr).unwrap();
-    println!("Server started");
-    for connection in listener.incoming() {
-        match connection {
-            Ok(mut stream) => {
-                println!("Server is geting pinged");
-                let server_queue = _cqueue.clone();
-                thread::spawn(move || {
-                    write_to_connection(stream, server_queue);
-                });
-            }
-            Err(E) => {
-                println!("Socket failed");
-            }
-        }
-    }
+    let clonedQueue = _cqueue.clone();
+    thread::spawn(move || {
+        spawn_push_thread(String::from("6008"), clonedQueue);
+    });
+    spawn_push_thread(String::from("6007"), _cqueue.clone());
 }
