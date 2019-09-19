@@ -20,7 +20,6 @@ pub struct Queue {
     name: String,
     size: usize,
     _canPush: Arc<(Mutex<bool>, Condvar)>,
-    _canPull: Arc<(Mutex<bool>, Condvar)>,
     _queue: ArrayQueue<Vec<u8>>,
 }
 
@@ -30,7 +29,6 @@ impl Default for Queue {
             name: String::from("Default"),
             size: 500000,
             _canPush: Arc::new((Mutex::new(true), Condvar::new())),
-            _canPull: Arc::new((Mutex::new(false), Condvar::new())),
             _queue: ArrayQueue::new(500000),
         }
     }
@@ -38,7 +36,6 @@ impl Default for Queue {
 
 impl QueueOperations<Vec<u8>> for Queue {
     fn push(&self, json_message: Vec<u8>) {
-        {
         let isFull = self._queue.is_full();
         let lock_push: &std::sync::Mutex<bool> = &self._canPush.0;
         let condVar_push = &self._canPush.1;
@@ -49,34 +46,18 @@ impl QueueOperations<Vec<u8>> for Queue {
 
         if self.size - self._queue.len() == 1 {
             *mutex_push = false;
-            condVar_push.notify_all();
+            condVar_push.notify_one();
         }
         self._queue.push(json_message);
-        }
-        let (lock_pull, condVar_pull) = &*self._canPull;
-        let mut mutex_pull = lock_pull.lock().unwrap();
-        *mutex_pull = true;
-        condVar_pull.notify_all();
     }
 
-    fn pull(&self) -> Vec<u8> {
-        let (lock_pull, condVar_pull) = &*self._canPull;
-        let mut mutex_pull = lock_pull.lock().unwrap();
-        while !*mutex_pull {
-            mutex_pull = condVar_pull.wait(mutex_pull).unwrap();
-        }
-        if self._queue.len() == 1 {
-            *mutex_pull = false;
-            condVar_pull.notify_all();
-        }
-        drop(mutex_pull);
-        let message = self._queue.pop().unwrap();
+    fn pull(&self) -> Result<Vec<u8>, crossbeam_queue::PopError> {
+        let message = self._queue.pop();
         let (lock_push, condVar_push) = &*self._canPush;
         let mut mutex_push = lock_push.lock().unwrap();
-            *mutex_push = true;
-            condVar_push.notify_all();
+        *mutex_push = true;
+        condVar_push.notify_one();
         message
-
     }
 }
 
@@ -92,7 +73,7 @@ pub trait Resizable {
 
 pub trait QueueOperations<T> {
     fn push(&self, json_message: T);
-    fn pull(&self) -> T;
+    fn pull(&self) -> Result<T, crossbeam_queue::PopError>;
 }
 
 impl Default for CircularQueue {

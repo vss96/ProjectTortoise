@@ -10,8 +10,16 @@ mod circular_queue;
 
 fn write_to_connection(mut stream: TcpStream, queue: Arc<Queue>) {
     while true {
-        stream.write_all(queue.pull().borrow());
-        stream.write_all("\n".as_bytes());
+        let msgBytes = queue.pull();
+        match msgBytes {
+            Ok(msg) => {
+                stream.write_all(msg.borrow());
+                stream.write_all("\n".as_bytes());
+            },
+            Err(E) => {
+
+            }
+        }
     }
 }
 
