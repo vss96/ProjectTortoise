@@ -47,18 +47,23 @@ fn main() {
     let _cqueue: Arc<Queue> = Arc::new(Queue::default());
     let queue_clone = _cqueue.clone();
 
-    let paths = fs::read_dir("/data/finalDataSet4Sept2019/").unwrap();
+    let paths = fs::read_dir("../../Downloads/sampleData").unwrap();
     let mut a = 1;
     thread::spawn(move || {
+        let mut file_count = 0;
         for path in paths {
-            let fname = String::from(path.unwrap().path().to_str().unwrap());
-            let json = fs::read_to_string(fname).unwrap_or_default().into_bytes();
+            let fpath = &path;
+            let fname = String::from(fpath.as_ref().unwrap().path().file_stem().unwrap().to_str().unwrap());
+            let pname = String::from(path.unwrap().path().to_str().unwrap());
+            let json = (fs::read_to_string(pname).unwrap_or_default() + ":" + &fname).into_bytes();
             queue_clone.push(json);
+            file_count+=1;
         }
+        println!("Done transfering {} Files",file_count);
     });
     let clonedQueue = _cqueue.clone();
     thread::spawn(move || {
-        spawn_push_thread(String::from("6008"), clonedQueue);
+        spawn_push_thread(String::from("6009"), clonedQueue);
     });
-    spawn_push_thread(String::from("6007"), _cqueue.clone());
+    spawn_push_thread(String::from("6010"), _cqueue.clone());
 }
