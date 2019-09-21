@@ -10,15 +10,18 @@ mod circular_queue;
 
 fn write_to_connection(mut stream: TcpStream, queue: Arc<Queue>) {
     while true {
+        let mut total_failed_tries = 0;
         let msgBytes = queue.pull();
         match msgBytes {
             Ok(msg) => {
-                let mut wbuf = BufWriter::with_capacity(10000,&stream);
-                wbuf.write_all(msg.borrow());
-                wbuf.write_all("\n".as_bytes());
+                stream.write_all(msg.borrow());
+                stream.write_all("\n".as_bytes());
             },
             Err(E) => {
-
+                total_failed_tries = total_failed_tries + 1;
+                if (total_failed_tries % 1000 == 0) {
+                    println!("Total PopErrors : {}", total_failed_tries);
+                }
             }
         }
     }
@@ -48,7 +51,7 @@ fn main() {
     let _cqueue: Arc<Queue> = Arc::new(Queue::default());
     let queue_clone = _cqueue.clone();
 
-    let paths = fs::read_dir("../../Downloads/sampleData").unwrap();
+    let paths = fs::read_dir("/data/finalDataSet4Sept2019").unwrap();
     let mut a = 1;
     thread::spawn(move || {
         let mut file_count = 0;
@@ -62,9 +65,12 @@ fn main() {
         }
         println!("Done transfering {} Files",file_count);
     });
-    let clonedQueue = _cqueue.clone();
-    thread::spawn(move || {
-        spawn_push_thread(String::from("6009"), clonedQueue);
-    });
-    spawn_push_thread(String::from("6010"), _cqueue.clone());
+    for i in 2..5 {
+        let clonedQueue = _cqueue.clone();
+        thread::spawn(move || {
+            let port = 6006 + i;
+            spawn_push_thread(String::from(port.to_string()), clonedQueue);
+        });
+    }
+    spawn_push_thread(String::from("6007"), _cqueue.clone());
 }
