@@ -5,19 +5,21 @@ use std::fs::File;
 use std::io::{BufRead, BufReader, BufWriter, Read, Write};
 use std::net::TcpStream;
 use time::PreciseTime;
+use std::thread;
 
-fn find_file_name(full_line : &String) -> usize {
+fn find_file_name(full_line: &String) -> usize {
     let mut counter = 0;
-    for ch in full_line.chars().rev(){
+    for ch in full_line.chars().rev() {
         if ch == ':' {
             break;
         }
-        counter+=1;
+        counter += 1;
     }
     full_line.len() - counter
 }
-fn main() {
-    let addr = "127.0.0.1:6009";
+
+fn spawn_consumer(port: &i32) {
+    let addr = "127.0.0.1".to_owned() + &port.to_string();
     let startTime = PreciseTime::now();
     let mut connection = TcpStream::connect(addr).expect("Connection Refused");
 
@@ -29,21 +31,20 @@ fn main() {
         let mut entire_line = line.as_ref().unwrap();
         let break_point = find_file_name(entire_line);
         let file_name = &entire_line[break_point..];
-        let mut line_string = &entire_line[..break_point-1];
+        let mut line_string = &entire_line[..break_point - 1];
         let mut fresult =
             File::create("../../Files/".to_string() + &file_name);
         match fresult {
             Ok(mut file) => {
                 msg_counter = msg_counter + 1;
-                file.write_all( line_string.as_bytes());
+                file.write_all(line_string.as_bytes());
             }
             Err(err) => {
-                println!("Files that error out : {}",&file_name);
-                println!("Line String : {} \n Break point : {}",line_string,find_file_name( &String::from(line_string)));
+                println!("Files that error out : {}", &file_name);
+                println!("Line String : {} \n Break point : {}", line_string, find_file_name(&String::from(line_string)));
             }
         }
 //            println!("Message Name / Message = {} / {}", file_name, line_string);
-
     }
     println!("Total Messages : {}", msg_counter);
     let total_time = startTime.to(PreciseTime::now()).num_seconds();
@@ -52,5 +53,13 @@ fn main() {
         total_time,
         msg_counter / total_time
     );
+}
 
+fn main() {
+    let base_port = 6006;
+    for i in 1..2 {
+        thread::spawn( move || {
+            spawn_consumer(&(base_port+i));
+        });
+    }
 }
