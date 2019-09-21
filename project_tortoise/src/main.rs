@@ -3,7 +3,7 @@ use std::{fs, thread};
 
 use crate::circular_queue::{Queue, QueueOperations};
 use std::borrow::Borrow;
-use std::io::Write;
+use std::io::{Write, BufWriter};
 use std::net::{TcpListener, TcpStream};
 
 mod circular_queue;
@@ -13,8 +13,9 @@ fn write_to_connection(mut stream: TcpStream, queue: Arc<Queue>) {
         let msgBytes = queue.pull();
         match msgBytes {
             Ok(msg) => {
-                stream.write_all(msg.borrow());
-                stream.write_all("\n".as_bytes());
+                let mut wbuf = BufWriter::with_capacity(10000,&stream);
+                wbuf.write_all(msg.borrow());
+                wbuf.write_all("\n".as_bytes());
             },
             Err(E) => {
 
