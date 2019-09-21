@@ -27,9 +27,9 @@ impl Default for Queue {
     fn default() -> Self {
         Queue {
             name: String::from("Default"),
-            size: 100000,
+            size: 500000,
             _canPush: Arc::new((Mutex::new(true), Condvar::new())),
-            _queue: ArrayQueue::new(100000),
+            _queue: ArrayQueue::new(500000),
         }
     }
 }
@@ -37,25 +37,26 @@ impl Default for Queue {
 impl QueueOperations<Vec<u8>> for Queue {
     fn push(&self, json_message: Vec<u8>) {
         let isFull = self._queue.is_full();
-        let lock: &std::sync::Mutex<bool> = &self._canPush.0;
-        let condVar = &self._canPush.1;
-        let mut mutex = lock.lock().unwrap();
-        while !*mutex {
-            mutex = condVar.wait(mutex).unwrap();
+        let lock_push: &std::sync::Mutex<bool> = &self._canPush.0;
+        let condVar_push = &self._canPush.1;
+        let mut mutex_push = lock_push.lock().unwrap();
+        while !*mutex_push {
+            mutex_push = condVar_push.wait(mutex_push).unwrap();
         }
+
         if self.size - self._queue.len() == 1 {
-            *mutex = false;
-            condVar.notify_one();
+            *mutex_push = false;
+            condVar_push.notify_one();
         }
         self._queue.push(json_message);
     }
 
-    fn pull(&self) -> Vec<u8> {
-        let message = self._queue.pop().unwrap_or_default();
-        let (lock, condVar) = &*self._canPush;
-        let mut mutex = lock.lock().unwrap();
-        *mutex = true;
-        condVar.notify_one();
+    fn pull(&self) -> Result<Vec<u8>, crossbeam_queue::PopError> {
+        let message = self._queue.pop();
+        let (lock_push, condVar_push) = &*self._canPush;
+        let mut mutex_push = lock_push.lock().unwrap();
+        *mutex_push = true;
+        condVar_push.notify_one();
         message
     }
 }
@@ -72,7 +73,7 @@ pub trait Resizable {
 
 pub trait QueueOperations<T> {
     fn push(&self, json_message: T);
-    fn pull(&self) -> T;
+    fn pull(&self) -> Result<T, crossbeam_queue::PopError>;
 }
 
 impl Default for CircularQueue {
