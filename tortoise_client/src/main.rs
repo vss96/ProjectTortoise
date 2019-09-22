@@ -26,7 +26,7 @@ fn spawn_consumer(port: &i32) {
     let mut msg_counter = 0;
 
 
-    let incoming_stream = BufReader::with_capacity(8000000,&connection);
+    let incoming_stream = BufReader::with_capacity(200000,&connection);
     let mut total_time = 0;
     for mut line in incoming_stream.lines() {
         let mut entire_line = line.as_ref().unwrap();
@@ -39,11 +39,12 @@ fn spawn_consumer(port: &i32) {
         match fresult {
             Ok(mut file) => {
                 msg_counter = msg_counter + 1;
-
                 file.write_all(line_string.as_bytes());
         total_time = total_time + fileWriteStartTime.to(PreciseTime::now()).num_milliseconds();
-                println!("Message #{} received: {} / Total Write Time : {}", msg_counter, startTime.to(PreciseTime::now()).num_seconds(), total_time/1000);
-            }
+        if msg_counter % 100000 == 0 {    
+        println!("Message #{} received: {} / Total Write Time : {}", msg_counter, startTime.to(PreciseTime::now()).num_seconds(), total_time/1000);
+        }
+    }
             Err(err) => {
                 println!("Files that error out : {}", &file_name);
                 println!("Line String : {} \n Break point : {}", line_string, find_file_name(&String::from(line_string)));
@@ -61,8 +62,9 @@ fn spawn_consumer(port: &i32) {
 
 fn main() {
     let base_port = 6007;
-    thread::spawn(move || {
-            spawn_consumer(&(base_port+3));
-    });
-    spawn_consumer(&6010);
+//    thread::spawn(move ||{
+//       spawn_consumer(&6881);
+//   });
+    spawn_consumer(&6881);
 }
+
