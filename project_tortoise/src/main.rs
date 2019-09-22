@@ -11,7 +11,6 @@ use crate::circular_queue::{Queue, QueueOperations};
 mod circular_queue;
 
 fn write_to_connection(mut stream: TcpStream, queue: Arc<Queue>) {
-    let mut total_failed_tries = 0;
     loop {
         let msgBytes = queue.pull();
         match msgBytes {
@@ -20,10 +19,6 @@ fn write_to_connection(mut stream: TcpStream, queue: Arc<Queue>) {
                 stream.write_all("\n".as_bytes());
             }
             Err(E) => {
-                total_failed_tries = total_failed_tries + 1;
-                if total_failed_tries % 1000000 == 0 {
-                    println!("Total PopErrors : {}", total_failed_tries);
-                }
             }
         }
     }
@@ -58,10 +53,10 @@ fn main() {
     let joinHandleOne = thread::spawn(move || {
         spawn_push_thread(String::from("6881"), spawn_queue.clone());
     });
-    let spawn2_queue = _cqueue.clone();
-    let joinHandleTwo = thread::spawn(move || {
-        spawn_push_thread(String::from("6882"), spawn2_queue);
-    });
+    //let spawn2_queue = _cqueue.clone();
+    //let joinHandleTwo = thread::spawn(move || {
+    //    spawn_push_thread(String::from("6882"), spawn2_queue);
+    //});
 
     let mut file_count = 0;
     let n_workers = 2;
@@ -83,5 +78,5 @@ fn main() {
     });
     joinHandleThree.join().unwrap();
     joinHandleOne.join().unwrap();
-    joinHandleTwo.join().unwrap();
+//    joinHandleTwo.join().unwrap();
 }
