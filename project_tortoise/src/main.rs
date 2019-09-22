@@ -1,3 +1,4 @@
+use threadpool::ThreadPool;
 use std::sync::Arc;
 use std::{fs, thread};
 use crate::circular_queue::{Queue, QueueOperations};
@@ -10,7 +11,7 @@ mod circular_queue;
 fn write_to_connection(mut stream: TcpStream, queue: Arc<Queue>) {
    // let mut wx = BufWriter::with_capacity(100000000,stream);
     let mut total_failed_tries = 0;
-    while true {
+    loop {
         let msgBytes = queue.pull();
         match msgBytes {
             Ok(msg) => {
@@ -50,18 +51,21 @@ fn spawn_push_thread(port: String, queue: Arc<Queue>) {
 fn main() {
     let _cqueue: Arc<Queue> = Arc::new(Queue::default());
     let queue_clone = _cqueue.clone();
-
     let paths = fs::read_dir("/data/finalDataSet4Sept2019").unwrap();
-    let mut a = 1;
     thread::spawn(move || {
         let mut file_count = 0;
+        let n_workers = 2;
+        let pool = ThreadPool::new(n_workers);
         for path in paths {
-            let fpath = &path;
-            let fname = String::from(fpath.as_ref().unwrap().path().file_stem().unwrap().to_str().unwrap());
-            let pname = String::from(path.unwrap().path().to_str().unwrap());
-            let json = (fs::read_to_string(pname).unwrap_or_default() + ":" + &fname).into_bytes();
-            queue_clone.push(json);
-            file_count+=1;
+            let queue_clone_for_worker = queue_clone.clone();
+            pool.execute(move || {
+                let fpath = &path;
+                let fname = String::from(fpath.as_ref().unwrap().path().file_stem().unwrap().to_str().unwrap());
+                let pname = String::from(path.unwrap().path().to_str().unwrap());
+                let json = (fs::read_to_string(pname).unwrap_or_default() + ":" + &fname).into_bytes();
+                queue_clone_for_worker.push(json);
+                file_count+=1;
+            });
         }
         println!("Done reading {} Files",file_count);
     });
