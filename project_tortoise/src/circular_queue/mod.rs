@@ -8,11 +8,12 @@ use std::string::String;
 use std::sync::{Arc, Condvar, Mutex};
 
 use crossbeam_queue::ArrayQueue;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 pub struct Queue {
     name: String,
     size: usize,
-    _canPush: Arc<(Mutex<bool>, Condvar)>,
+    end_marker: AtomicBool,
     _queue: ArrayQueue<Vec<u8>>,
 }
 
@@ -21,7 +22,7 @@ impl Default for Queue {
         Queue {
             name: String::from("Default"),
             size: 500000,
-            _canPush: Arc::new((Mutex::new(true), Condvar::new())),
+            end_marker: AtomicBool::new(false),
             _queue: ArrayQueue::new(500000),
         }
     }
@@ -38,6 +39,16 @@ impl QueueOperations<Vec<u8>> for Queue {
     fn pull(&self) -> Result<Vec<u8>, crossbeam_queue::PopError> {
         let message = self._queue.pop();
         message
+    }
+}
+
+impl Queue {
+    pub fn end_queue(&self) {
+        self.end_marker.store(true, Ordering::Relaxed);
+    }
+
+    pub fn is_queue_ended(&self) -> bool {
+        self.end_marker.load(Ordering::Relaxed)
     }
 }
 

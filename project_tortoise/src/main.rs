@@ -18,7 +18,11 @@ fn write_to_connection(mut stream: TcpStream, queue: Arc<Queue>) {
                 stream.write_all(msg.borrow()).unwrap_or_default();
                 stream.write_all("\n".as_bytes()).unwrap_or_default();
             }
-            Err(e) => {}
+            Err(e) => {
+                if queue.is_queue_ended() {
+                    break;
+                }
+            }
         }
     }
 }
@@ -70,6 +74,8 @@ fn main() {
                 file_count += 1;
             });
         }
+        pool.join();
+        queue_clone.end_queue();
     });
     join_handle_file_reader_thread.join().unwrap();
     join_handle_server.join().unwrap();
