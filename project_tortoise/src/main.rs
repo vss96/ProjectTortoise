@@ -52,27 +52,31 @@ fn main() {
     let _cqueue: Arc<Queue> = Arc::new(Queue::default());
     let queue_clone = _cqueue.clone();
     let paths = fs::read_dir("/data/finalDataSet4Sept2019").unwrap();
-    thread::spawn(move || {
-        let mut file_count = 0;
-        let n_workers = 2;
-        let pool = ThreadPool::new(n_workers);
-        for path in paths {
-            let queue_clone_for_worker = queue_clone.clone();
-            pool.execute(move || {
-                let fpath = &path;
-                let fname = String::from(fpath.as_ref().unwrap().path().file_stem().unwrap().to_str().unwrap());
-                let pname = String::from(path.unwrap().path().to_str().unwrap());
-                let json = (fs::read_to_string(pname).unwrap_or_default() + ":" + &fname).into_bytes();
-                queue_clone_for_worker.push(json);
-                file_count+=1;
-            });
-        }
-        println!("Done reading {} Files",file_count);
-    });
+
     let spawn_queue = _cqueue.clone();
-    thread::spawn(move || {
-    spawn_push_thread(String::from("6881"),spawn_queue.clone());
+    let joinHandleOne = thread::spawn(move || {
+        spawn_push_thread(String::from("6881"),spawn_queue.clone());
     });
     let spawn2_queue = _cqueue.clone();
-    spawn_push_thread(String::from("6882"),spawn2_queue);
+    let joinHandleTwo = thread::spawn(move || {
+        spawn_push_thread(String::from("6882"),spawn2_queue);
+    });
+
+    let mut file_count = 0;
+    let n_workers = 2;
+    let pool = ThreadPool::new(n_workers);
+    for path in paths {
+        let queue_clone_for_worker = queue_clone.clone();
+        pool.execute(move || {
+            let fpath = &path;
+            let fname = String::from(fpath.as_ref().unwrap().path().file_stem().unwrap().to_str().unwrap());
+            let pname = String::from(path.unwrap().path().to_str().unwrap());
+            let json = (fs::read_to_string(pname).unwrap_or_default() + ":" + &fname).into_bytes();
+            queue_clone_for_worker.push(json);
+            file_count+=1;
+        });
+    }
+    println!("Done reading {} Files",file_count);
+    joinHandleOne.join().unwrap();
+    joinHandleTwo.join().unwrap();
 }
