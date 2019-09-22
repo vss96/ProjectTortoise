@@ -65,20 +65,23 @@ fn main() {
 
     let mut file_count = 0;
     let n_workers = 2;
-    let pool = ThreadPool::new(n_workers);
-    for path in paths {
-        let queue_clone_for_worker = queue_clone.clone();
-//        pool.execute(move || {
-            let fpath = &path;
-            let fname = String::from(fpath.as_ref().unwrap().path().file_stem().unwrap().to_str().unwrap());
-            let pname = String::from(path.unwrap().path().to_str().unwrap());
-            let json = (fs::read_to_string(pname).unwrap_or_default() + ":" + &fname).into_bytes();
-            queue_clone_for_worker.push(json);
-            file_count += 1;
-//        });
-    }
-
-    println!("Done reading {} Files", file_count);
+    let joinHandleThree = thread::spawn(move || {
+        let pool = ThreadPool::new(n_workers);
+        for path in paths {
+            let queue_clone_for_worker = queue_clone.clone();
+            pool.execute(move || {
+                let fpath = &path;
+                let fname = String::from(fpath.as_ref().unwrap().path().file_stem().unwrap().to_str().unwrap());
+                let pname = String::from(path.unwrap().path().to_str().unwrap());
+                let mut json = fs::read(pname).unwrap_or_default();
+                let mut appendedFileName = (":".to_owned() + &fname).into_bytes();
+                let queue_msg = json.append(&mut appendedFileName);
+                queue_clone_for_worker.push(json);
+                file_count += 1;
+            });
+        }
+    });
+    joinHandleThree.join().unwrap();
     joinHandleOne.join().unwrap();
     joinHandleTwo.join().unwrap();
 }
