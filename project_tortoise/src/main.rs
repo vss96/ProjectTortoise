@@ -1,8 +1,8 @@
-use std::{fs, thread};
 use std::borrow::Borrow;
 use std::io::Write;
 use std::net::{TcpListener, TcpStream};
 use std::sync::Arc;
+use std::{fs, thread};
 
 use threadpool::ThreadPool;
 
@@ -65,7 +65,16 @@ fn main() {
             let queue_clone_for_worker = queue_clone.clone();
             pool.execute(move || {
                 let fpath = &path;
-                let fname = String::from(fpath.as_ref().unwrap().path().file_stem().unwrap().to_str().unwrap());
+                let fname = String::from(
+                    fpath
+                        .as_ref()
+                        .unwrap()
+                        .path()
+                        .file_stem()
+                        .unwrap()
+                        .to_str()
+                        .unwrap(),
+                );
                 let pname = String::from(path.unwrap().path().to_str().unwrap());
                 let mut json = fs::read(pname).unwrap_or_default();
                 let mut appended_file_name = (":".to_owned() + &fname).into_bytes();

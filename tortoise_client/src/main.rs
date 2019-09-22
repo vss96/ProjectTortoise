@@ -29,20 +29,28 @@ fn spawn_consumer(port: &i32) {
         let break_point = find_file_name(entire_line);
         let file_name = &entire_line[break_point..];
         let line_string = &entire_line[..break_point - 1];
-        let fresult =
-            File::create("/data/Files/".to_string() + &file_name + ".json");
+        let fresult = File::create("/data/Files/".to_string() + &file_name + ".json");
         match fresult {
             Ok(mut file) => {
                 msg_counter = msg_counter + 1;
                 file.write_all(line_string.as_bytes()).unwrap_or_default();
-                total_time = consumer_start_time.to(PreciseTime::now()).num_milliseconds();
+                total_time = consumer_start_time
+                    .to(PreciseTime::now())
+                    .num_milliseconds();
                 if msg_counter % 100000 == 0 {
-                    println!("Message #{} received / Total Write Time : {}", msg_counter, total_time);
+                    println!(
+                        "Message #{} received / Total Write Time : {}",
+                        msg_counter, total_time
+                    );
                 }
             }
             Err(_err) => {
                 println!("Files that error out : {}", &file_name);
-                println!("Line String : {} \n Break point : {}", line_string, find_file_name(&String::from(line_string)));
+                println!(
+                    "Line String : {} \n Break point : {}",
+                    line_string,
+                    find_file_name(&String::from(line_string))
+                );
             }
         }
     }
@@ -58,4 +66,3 @@ fn spawn_consumer(port: &i32) {
 fn main() {
     spawn_consumer(&6881);
 }
-

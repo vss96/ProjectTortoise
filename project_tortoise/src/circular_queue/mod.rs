@@ -30,9 +30,7 @@ impl Default for Queue {
 
 impl QueueOperations<Vec<u8>> for Queue {
     fn push(&self, json_message: Vec<u8>) {
-        let isFull = self._queue.is_full();
-        while self._queue.len() == self.size {
-        }
+        while self._queue.len() == self.size {} //wait if queue is full
         self._queue.push(json_message);
     }
 
