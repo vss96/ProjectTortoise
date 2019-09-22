@@ -1,6 +1,5 @@
 use std::sync::Arc;
 use std::{fs, thread};
-
 use crate::circular_queue::{Queue, QueueOperations};
 use std::borrow::Borrow;
 use std::io::{Write, BufWriter};
@@ -9,8 +8,9 @@ use std::net::{TcpListener, TcpStream};
 mod circular_queue;
 
 fn write_to_connection(mut stream: TcpStream, queue: Arc<Queue>) {
+   // let mut wx = BufWriter::with_capacity(100000000,stream);
+    let mut total_failed_tries = 0;
     while true {
-        let mut total_failed_tries = 0;
         let msgBytes = queue.pull();
         match msgBytes {
             Ok(msg) => {
@@ -19,7 +19,7 @@ fn write_to_connection(mut stream: TcpStream, queue: Arc<Queue>) {
             },
             Err(E) => {
                 total_failed_tries = total_failed_tries + 1;
-                if (total_failed_tries % 1000 == 0) {
+                if (total_failed_tries % 1000000 == 0) {
                     println!("Total PopErrors : {}", total_failed_tries);
                 }
             }
@@ -34,7 +34,7 @@ fn spawn_push_thread(port: String, queue: Arc<Queue>) {
     for connection in listener.incoming() {
         match connection {
             Ok(mut stream) => {
-                println!("Server is geting pinged");
+                println!("Server is geting pinged on {}",&port);
                 let server_queue = queue.clone();
                 thread::spawn(move || {
                     write_to_connection(stream, server_queue);
@@ -63,14 +63,12 @@ fn main() {
             queue_clone.push(json);
             file_count+=1;
         }
-        println!("Done transfering {} Files",file_count);
+        println!("Done reading {} Files",file_count);
     });
-    for i in 2..5 {
-        let clonedQueue = _cqueue.clone();
-        thread::spawn(move || {
-            let port = 6006 + i;
-            spawn_push_thread(String::from(port.to_string()), clonedQueue);
-        });
-    }
-    spawn_push_thread(String::from("6007"), _cqueue.clone());
+    let spawn_queue = _cqueue.clone();
+    thread::spawn(move || {
+    spawn_push_thread(String::from("6881"),spawn_queue.clone());
+    });
+    let spawn2_queue = _cqueue.clone();
+    spawn_push_thread(String::from("6882"),spawn2_queue);
 }
