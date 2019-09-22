@@ -5,6 +5,7 @@ use std::io::{BufRead, BufReader, Write};
 use std::net::TcpStream;
 
 use time::PreciseTime;
+use std::{io, env};
 
 fn find_file_name(full_line: &String) -> usize {
     let mut counter = 0;
@@ -17,11 +18,11 @@ fn find_file_name(full_line: &String) -> usize {
     full_line.len() - counter
 }
 
-fn spawn_consumer(port: &i32) {
+fn spawn_consumer(port: &i32 , buffer_size : usize) {
     let addr = "52.3.229.162:".to_owned() + &port.to_string();
     let connection = TcpStream::connect(addr).expect("Connection Refused");
     let mut msg_counter = 0;
-    let incoming_stream = BufReader::with_capacity(200000, &connection);
+    let incoming_stream = BufReader::with_capacity(buffer_size, &connection);
     let consumer_start_time = PreciseTime::now();
     let mut total_time = 0;
     for line in incoming_stream.lines() {
@@ -64,5 +65,18 @@ fn spawn_consumer(port: &i32) {
 }
 
 fn main() {
-    spawn_consumer(&6881);
+    let args: Vec<String> = env::args().collect();
+    let mut consumer_port = &args[1];
+    let mut buffer_size = &args[2];
+
+    let trimmed_port = consumer_port.trim();
+    let trimmed_buffer = buffer_size.trim();
+    match trimmed_port.parse::<i32>() {
+        Ok(port) => {
+            let buffer = trimmed_buffer.parse::<usize>().unwrap_or_default();
+            println!("Running consumer on port {} with Buffer {}", port,buffer);
+            spawn_consumer(&port,buffer)
+        }
+        Err(..) => println!("this was not an integer: {}", trimmed_port),
+    };
 }
